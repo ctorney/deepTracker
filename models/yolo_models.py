@@ -27,7 +27,7 @@ def _conv_block(inp, convs, skip=True):
 
     return add([skip_connection, x]) if skip else x
 
-def get_yolo_coco_sort(in_w=416,in_h=416):
+def get_yolo_sort(in_w=416,in_h=416):
     input_image = Input(shape=( in_h,in_w, 3))
 
     # Layer  0 => 4
