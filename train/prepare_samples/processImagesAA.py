@@ -1,25 +1,22 @@
 import numpy as np
 import pandas as pd
-import os,sys
+import os,sys,glob
 import cv2
 import pickle
 sys.path.append("../..") 
 from models.yolo_models import get_yolo_coco
 from decoder import decode
-
+ROOTDIR = os.path.expanduser('~/workspace/deepTracker/')
 ROOTDIR = os.path.expanduser('/media/aakanksha/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Documents/Backup/Phd/Analysis/blackbuckML/deepTracker/')
 image_dir = ROOTDIR + 'data/still_images/'
-train_dir = ROOTDIR + 'train/'
+train_dir = ROOTDIR + 'train/train_images/'
 
-allfile = ROOTDIR  + 'weights/yolo-v3-coco.h5'
-w_train = allfile #pd.read_csv(allfile)
 
-train_images = np.genfromtxt(ROOTDIR + 'data/2015-checked-train.txt',dtype='str')
+train_images =  glob.glob( image_dir + "*.png" )
 
 width=1920
 height=1080
 
-im_size=416 #size of training imageas for yolo
 im_size=864 #size of training imageas for yolo
 
 nx = width//im_size
@@ -28,14 +25,12 @@ ny = height//im_size
 wb_size=64 #size of bounding boxes we're going to create
 sz_2=wb_size//2
 yolov3 = get_yolo_coco(im_size,im_size)
-print(yolov3.summary())
-sys.exit('bye')
+
 yolov3.load_weights('../../weights/yolo-v3-coco.h5')
 im_num=1
 all_imgs = []
 for imagename in train_images: 
-    im = cv2.imread(image_dir + imagename + '.JPG')
-    df = w_train[w_train['image_name']==imagename]
+    im = cv2.imread(imagename)
     print('processing image ' + imagename + ', ' + str(im_num) + ' of 500 ...')
     im_num+=1
 
@@ -43,16 +38,15 @@ for imagename in train_images:
     for x in np.arange(0,width-im_size,im_size):
         for y in np.arange(0,height-im_size,im_size):
             img_data = {'object':[]}
-            save_name = train_dir + '/' + imagename + '-' + str(n_count) + '.JPG'
-            box_name = train_dir + '/bbox/' + imagename + '-' + str(n_count) + '.JPG'
+            save_name = train_dir + '/' + os.path.basename(imagename) + '-' + str(n_count) + '.png'
+            box_name = train_dir + '/bbox/' + os.path.basename(imagename) + '-' + str(n_count) + '.png'
             img = im[y:y+im_size,x:x+im_size,:]
             cv2.imwrite(save_name, img)
             img_data['filename'] = save_name
             img_data['width'] = im_size
             img_data['height'] = im_size
             n_count+=1
-            thisDF = df[(df['xcoord'] > x) & (df['xcoord'] < x+im_size) & (df['ycoord'] > y) & (df['ycoord'] < y+im_size)]
-            # make the yolov3 model to predict 80 classes on COCO
+            # use the yolov3 model to predict 80 classes on COCO
 
             # preprocess the image
             image_h, image_w, _ = img.shape
@@ -61,10 +55,8 @@ for imagename in train_images:
 
             # run the prediction
             yolos = yolov3.predict(new_image)
-            xloc = thisDF['xcoord'].values - x
-            yloc = thisDF['ycoord'].values - y
 
-            boxes = decode(yolos, im_size, xloc, yloc, box_name, img)
+            boxes = decode(yolos, im_size, box_name, img)
             for b in boxes:
                 xmin=b[0]
                 xmax=b[2]

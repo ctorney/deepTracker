@@ -5,8 +5,15 @@ import os,sys
 import cv2
 
 
-MIN_AREA=32*16
-MAX_AREA=64*64
+MIN_AREA=15*6
+MAX_AREA=35*35
+MIN_LENGTH=10
+MAX_LENGTH=40
+
+obj_thresh, nms_thresh = 0.001, 0.45
+anchors = [[116,90,  156,198,  373,326],  [30,61, 62,45,  59,119], [10,13,  16,30,  33,23]]
+#anchors = [[53.57159857, 42.28639429, 29.47927551, 51.27168234,37.15496912, 26.17125211]]
+
 class BoundBox:
     def __init__(self, xmin, ymin, xmax, ymax, objness = None, classes = None):
         self.xmin = int(xmin)
@@ -65,7 +72,7 @@ def bbox_iou(box1, box2):
 
 
 
-def decode_netout(netout, anchors, xvals, yvals, net_h, net_w):
+def decode_netout(netout, anchors, net_h, net_w):
     grid_h, grid_w = netout.shape[:2]
     nb_box = 3
     netout = netout.reshape((grid_h, grid_w, nb_box, -1))
@@ -97,17 +104,16 @@ def decode_netout(netout, anchors, xvals, yvals, net_h, net_w):
             h = anchors[2 * b + 1] * np.exp(h) #/ net_h # unit: image height  
 
             if (w*h > MAX_AREA): continue
-            if (h > 65): continue
-            if (w > 65): continue
+            if (h < MIN_LENGTH): continue
+            if (w < MIN_LENGTH): continue
+            if (h > MAX_LENGTH): continue
+            if (w > MAX_LENGTH): continue
             if (w*h < MIN_AREA): continue
             if x-w/2<0: continue
             if y-h/2<0: continue
             if x+w/2>net_w: continue
             if y+h/2>net_h: continue
 
-            w_in_box = np.sum( (xvals>(x-w/2)) & (yvals>(y-h/2)) & (xvals<(x+w/2)) & (yvals<(y+h/2)))
-            if w_in_box>2: continue
-            if w_in_box<1: continue
             #print(xvals)
             #print(yvals)
             #print(x-w/2, y-h/2, x+w/2, y+h/2)
@@ -158,7 +164,7 @@ def do_nms(boxes, nms_thresh):
                 if bbox_iou(boxes[index_i], boxes[index_j]) >= nms_thresh:
                     boxes[index_j].classes[c] = 0
                     
-def do_duplicates(boxes, xvals, yvals):
+def do_duplicates(boxes):
 
     nbox = len(boxes)
     xmins = np.asarray([b.xmin for b in boxes])
@@ -185,7 +191,7 @@ def do_duplicates(boxes, xvals, yvals):
             for i in inds:
                 boxes[i[0]].objness=0
 
-def draw_boxes(image, boxes, xvals,yvals):
+def draw_boxes(image, boxes):
     for box in boxes:
         
  #       bx_area = (box.xmin-box.xmax)**2+(box.ymin-box.ymax)**2
@@ -215,15 +221,14 @@ def draw_boxes(image, boxes, xvals,yvals):
         
     return image      
 # set some parameters
-obj_thresh, nms_thresh = 0.001, 0.45
-anchors = [[116,90,  156,198,  373,326],  [30,61, 62,45,  59,119], [10,13,  16,30,  33,23]]
 
-def decode(yolos, im_size, xvals, yvals, save_name, img):
+def decode(yolos, im_size, save_name, img):
     boxes = []
 
-    for i in range(len(yolos)):
+ #   for i in range(len(yolos)):
+    i=2 
         # decode the output of the network
-        boxes += decode_netout(yolos[i][0], anchors[i], xvals, yvals, im_size, im_size)
+    boxes += decode_netout(yolos[i][0], anchors[i], im_size, im_size)
 
 # correct the sizes of the bounding boxes
   #  correct_yolo_boxes(boxes, im_size, im_size, im_size, im_size)
@@ -231,9 +236,9 @@ def decode(yolos, im_size, xvals, yvals, save_name, img):
 # suppress non-maximal boxes
     do_nms(boxes, nms_thresh)     
 
-    do_duplicates(boxes,xvals,yvals)
+    #do_duplicates(boxes)
 # draw bounding boxes on the image using labels
-    draw_boxes(img, boxes,  xvals,yvals) 
+    draw_boxes(img, boxes) 
 
 # write the image with bounding boxes to file
     if len(boxes)>0:
