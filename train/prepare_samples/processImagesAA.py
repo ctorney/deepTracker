@@ -7,17 +7,17 @@ sys.path.append("../..")
 from models.yolo_models import get_yolo_coco
 from decoder import decode
 
-ROOTDIR = os.path.expanduser('~/workspace/deepWildCount/')
-image_dir = ROOTDIR + '/data/2015/'
-train_dir = os.path.realpath('../train_images/')
+ROOTDIR = os.path.expanduser('/media/aakanksha/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Documents/Backup/Phd/Analysis/blackbuckML/deepTracker/')
+image_dir = ROOTDIR + 'data/still_images/'
+train_dir = ROOTDIR + 'train/'
 
-allfile = ROOTDIR  + '/data/2015-Z-LOCATIONS.csv'
-w_train = pd.read_csv(allfile)
+allfile = ROOTDIR  + 'weights/yolo-v3-coco.h5'
+w_train = allfile #pd.read_csv(allfile)
 
-train_images = np.genfromtxt(ROOTDIR + '/data/2015-checked-train.txt',dtype='str')
+train_images = np.genfromtxt(ROOTDIR + 'data/2015-checked-train.txt',dtype='str')
 
-width=7360
-height=4912
+width=1920
+height=1080
 
 im_size=416 #size of training imageas for yolo
 im_size=864 #size of training imageas for yolo
@@ -95,3 +95,5 @@ for imagename in train_images:
 #print(all_imgs)
 with open(train_dir + '/annotations.pickle', 'wb') as handle:
    pickle.dump(all_imgs, handle)
+                        
+
