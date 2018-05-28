@@ -5,8 +5,8 @@ import cv2
 import pickle
 sys.path.append("../..") 
 from models.yolo_models import get_yolo_coco
-from decoder import decode
-ROOTDIR = os.path.expanduser('~/workspace/deepTracker/')
+from train.prepare_samples.decoder import decode
+#ROOTDIR = os.path.expanduser('~/workspace/deepTracker/')
 ROOTDIR = os.path.expanduser('/media/aakanksha/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Documents/Backup/Phd/Analysis/blackbuckML/deepTracker/')
 image_dir = ROOTDIR + 'data/still_images/'
 train_dir = ROOTDIR + 'train/train_images/'
@@ -26,7 +26,7 @@ wb_size=64 #size of bounding boxes we're going to create
 sz_2=wb_size//2
 yolov3 = get_yolo_coco(im_size,im_size)
 
-yolov3.load_weights('../../weights/yolo-v3-coco.h5')
+yolov3.load_weights('/media/aakanksha/f41d5ac2-703c-4b56-a960-cd3a54f21cfb/aakanksha/Documents/Backup/Phd/Analysis/blackbuckML/deepTracker/weights/yolo-v3-coco.h5')
 im_num=1
 all_imgs = []
 for imagename in train_images: 
@@ -37,7 +37,7 @@ for imagename in train_images:
     n_count=0
     for x in np.arange(0,width-im_size,im_size):
         for y in np.arange(0,height-im_size,im_size):
-            img_data = {'object':[]}
+            img_data = {'object':[]}     #dictionary? key-value pair to store image data
             save_name = train_dir + '/' + os.path.basename(imagename) + '-' + str(n_count) + '.png'
             box_name = train_dir + '/bbox/' + os.path.basename(imagename) + '-' + str(n_count) + '.png'
             img = im[y:y+im_size,x:x+im_size,:]
